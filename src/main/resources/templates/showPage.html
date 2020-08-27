@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome Page</title>
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <script>
+        /* 自动增加序号值 */
+        var line_number = 0;
+        var allIDs = [];
+
+        queryAllIDsFromDatabase();
+
+        window.onload = function () {
+            refreshUrlData();
+        }   // 页面加载后，执行定时刷新函数
+
+        function refreshUrlData()
+        {
+            queryAllIDsFromDatabase();
+
+            if (allIDs == null){
+                document.getElementById("showElement").innerText = "查询数据中ID出错！";
+            }
+            else {
+                var table_data = "";
+                console.log(allIDs);
+
+                for (var i = 0; i < allIDs.length; i++) {
+                    var currentID = allIDs[i];
+                    var result = queryURLDataByID(currentID,i);
+                    table_data += "<tr><td>" + line_number++ + "</td><td id='key_"+i+"'>" + result["key"] + "</td><td  id='value_"+i+"'>" + result["value"] + "</td></tr>";
+                }
+                document.getElementById("toChangeData").innerHTML = table_data; // 注意不是innerText,否则只显示文本
+                line_number = 1;
+            }
+            if (line_number == 0){
+                setTimeout(refreshUrlData, 1000 * 1);   // 间隔1秒后重新调用本函数
+                line_number++;
+            }
+            else
+                setTimeout(refreshUrlData, 1000 * 30);   // 间隔30秒后重新调用本函数
+        }
+
+        function queryAllIDsFromDatabase()
+        {
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET","/queryAllIDs", true);
+            xmlhttp.send();
+
+            xmlhttp.onreadystatechange=function()
+            {
+                if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                {
+                    var list = eval("(" + xmlhttp.responseText + ")");  // 解析传递过来的List类型数据
+                    allIDs = list;
+                }
+            }
+        }
+
+        function queryURLDataByID(id,i) {
+
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("GET","/queryDataByID?id="+id, true);
+            xmlhttp.send();
+
+            xmlhttp.onreadystatechange=function()
+            {
+                if (xmlhttp.readyState==4 && xmlhttp.status==200)
+                {
+                    var result = eval("(" + xmlhttp.response + ")");
+                    // console.log(result["key"]);
+                    document.getElementById("key_"+i).innerHTML = result["key"];
+                    document.getElementById("value_"+i).innerHTML = result["value"];
+
+                    return result;
+                }
+                else {
+                    return "Data achieve error.";
+                }
+            }
+            return "quit before data achieve.";
+        }
+    </script>
+    <style>
+        table
+        {
+            border-collapse: collapse;  /* border-collapse 属性设置表格的边框是否被合并为一个单一的边框，还是象在标准的 HTML 中那样分开显示 */
+            font-family: Arial; /* 表格字体 */
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            border-bottom: black solid 3px; /* 底边界 */
+        }
+        thead
+        {
+            background: rgb(73, 73, 73); /* 首行标题背景 */
+        }
+        th,td
+        {
+            padding: .5em;
+            border-right: white solid 1px;
+        }
+        th
+        {
+            color: #fff;
+        }
+        td
+        {
+            text-decoration: none;
+            color: black;
+            text-align: left;
+        }
+        tbody tr:nth-child(odd)     /* nth-child(n) 选择器匹配属于其父元素的第 N 个子元素，odd代表奇数行 */
+        {
+            background: #ccc;
+        }
+    </style>
+
+</head>
+<body>
+    <div>
+        <table>
+            <!-- 首行信息 -->
+            <thead>
+                <tr>
+                    <!-- width控制每一列的宽度 -->
+                    <th style="width: 5%; font-size: 19px;">序号</th>
+                    <th style="width: 20%; font-size: 19px;">URL地址</th>
+                    <th style="width: 60%; font-size: 19px;">请求详情</th>
+                </tr>
+            </thead>
+            <!-- 数据部分，通过JS显示 -->
+            <tbody id="toChangeData">
+            </tbody>
+        </table>
+    </div>
+    <p id="testid">
+    </p>
+</body>
+</html>
+

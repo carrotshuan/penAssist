@@ -1,0 +1,265 @@
+######################## 当前测试使用的测试场景集 ########################
+ApplyRuleSets:
+  ruleSetsName:
+#    - CommonRuleMethodToPOST
+#    - CommonRuleMethodToGET
+#    - CommonRuleMethodToPUT
+#    - CommonRuleMethodToDELETE
+
+#    - CSRF
+#    - IDOR
+#    - BrokenAccessControl
+#    - UnAuthentication
+     - FuzzData
+
+#    - TEST
+
+######################## 当前测试场景集对应的规则集 ########################
+RuleSets:
+  # 通用的变换规则
+  - setName:
+      - CommonRuleMethodToPOST
+    ruleNames:
+      - ReplaceMethodToPOST
+      - AddModifyRuleNamePOST
+
+  - setName:
+      - CommonRuleMethodToGET
+    ruleNames:
+      - ReplaceMethodToGET
+      - AddModifyRuleNameGET
+
+  - setName:
+      - CommonRuleMethodToPUT
+    ruleNames:
+      - ReplaceMethodToPUT
+      - AddModifyRuleNamePUT
+
+  - setName:
+      - CommonRuleMethodToDELETE
+    ruleNames:
+      - ReplaceMethodToDELETE
+      - AddModifyRuleNameDELETE
+
+  # 测试 CSRF 使用的规则集
+  - setName:
+      - CSRF
+    ruleNames:
+      - DeleteCsrfToken
+      - AddCSRFHeaderRuleName
+
+  # 测试 XSS 使用的规则集
+  - setName:
+      - XSS
+    ruleNames:
+      - ReplaceRequestParam
+      - DeleteUserAgent
+      - ReplaceMethodToPOST
+
+  # 测试 IDOR 使用的规则集，IDOR仅替换Cookie中ID值即可
+  - setName:
+      - IDOR
+    ruleNames:
+      - ReplaceCookieValue
+      - AddIDORRuleName
+
+  # 测试 越权 使用的规则集
+  - setName:
+      - BrokenAccessControl
+    ruleNames:
+      - ReplaceCookieValue
+      - ReplaceCsrfToken
+      - AddBrokenAccessControlRuleName
+
+  # 测试 无认证 使用的规则集
+  - setName:
+      - UnAuthentication
+    ruleNames:
+      - DeleteCookieValue
+      - DeleteCsrfToken
+      - AddUnAuthenticationRuleName
+
+
+  # 测试 单个rule 功能
+  - setName:
+      - TEST
+    ruleNames:
+#      - addHeaderValueTest
+#      - ReplaceCookieValueTest
+      - addCookieValueTest
+
+
+  - setName:
+      - FuzzData
+    ruleNames:
+      - FuzzArgsOneByOne
+
+######################## 当前测试场景集对应规则集的详细规则 ########################
+DefineRules:
+
+  ############### 请求行 有关规则定义 ############
+
+  # 替换 请求行 的方法为 POST
+  - name: ReplaceMethodToPOST
+    type: lineRule
+    action: replace
+    target: method
+    value: POST
+
+  # 替换 请求行 的方法为 GET
+  - name: ReplaceMethodToGET
+    type: lineRule
+    action: replace
+    target: method
+    value: GET
+
+  # 替换 请求行 的方法为 PUT
+  - name: ReplaceMethodToPUT
+    type: lineRule
+    action: replace
+    target: method
+    value: PUT
+
+  # 替换 请求行 的方法为 PUT
+  - name: ReplaceMethodToDELETE
+    type: lineRule
+    action: replace
+    target: method
+    value: DELETE
+
+  # 替换 请求行 中参数值
+  - name: ReplaceRequestParam
+    type: lineRule
+    action: replace
+    target: param
+    value: xssPayload
+
+  ############### header 有关规则定义 ############
+
+  # 添加 header 头的自定义数据
+  - name: addHeaderValue
+    type: headerRule
+    action: add
+    target: My-header
+    value: my-header-value
+
+  # 删除 header 中的 CSRF Token
+  - name: DeleteCsrfToken
+    type: headerRule
+    action: delete
+    target: CSRF-TOKEN
+    value:
+
+  # 删除 header 中的User-Agent
+  - name: DeleteUserAgent
+    type: headerRule
+    action: delete
+    target: User-Agent
+    value:
+
+  # 替换 header 中的CSRF Token
+  - name: ReplaceCsrfToken
+    type: headerRule
+    action: replace
+    target: CSRF-TOKEN
+    value: YYYYYYYYYYYYYYYYYYY
+
+  ############### Cookie 有关规则定义 ############
+
+  # 替换 Cookie 中的值
+  - name: ReplaceCookieValue
+    type: cookieRule
+    action: replace
+    target: BAIDUID
+    value: xxxxxxxx
+
+  # 删除 Cookie 中的值
+  - name: DeleteCookieValue
+    type: cookieRule
+    action: delete
+    target: BAIDUID
+    value:
+
+  ############### Body 有关规则定义 ############
+
+  # 增加 Body 中的自定义数据
+  - name: addBodyValue
+    type: bodyRule
+    action: add
+    target: My-Body
+    value: my-Body-Value
+
+  ############### 增加每个规则变换的名称 ############
+
+  - name: AddModifyRuleNamePOST
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: CommonRuleMethodToPOST
+
+  - name: AddModifyRuleNameGET
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: CommonRuleMethodToGET
+
+  - name: AddModifyRuleNamePUT
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: CommonRuleMethodToPUT
+
+  - name: AddModifyRuleNameDELETE
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: CommonRuleMethodToDELETE
+
+  - name: AddBrokenAccessControlRuleName
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: BrokenAccessControl
+
+  - name: AddUnAuthenticationRuleName
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: UnAuthentication
+
+  - name: FuzzArgsOneByOne
+    type: bodyRule
+    action: replaceEach
+    target: key
+    value: AAAA
+
+  ############### TEST 规则定义 ############
+  - name: addHeaderValueTest
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: TEST
+
+  - name: AddIDORRuleName
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: IDOR
+
+  - name: AddCSRFHeaderRuleName
+    type: headerRule
+    action: add
+    target: MyHeader
+    value: CSRF
+
+  - name: ReplaceCookieValueTest
+    type: lineRule
+    action: replaceParam
+    target: param
+    value: POST
+
+  - name: addCookieValueTest
+    type: cookieRule
+    action: add
+    target: MyCookie
+    value: addCookieValueTest

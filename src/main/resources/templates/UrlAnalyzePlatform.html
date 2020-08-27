@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!-- rel代表关联样式表，一定要加这一句，否则无法解析 -->
+    <link rel="stylesheet" type="text/css" href="/static/UAP.css" />    
+    <script src="/static/jquery-3.4.1.min.js"></script>
+    <script>
+        var maxContentNum = 100;
+
+        // 数组深拷贝函数
+        function copyArr(arr) {
+            let res = [];
+            for (let i = 0; i < arr.length; i++) {
+                res.push(arr[i]);
+            }
+            return res;
+        }
+        // 将数据按指定个数展示在页面中
+        function showContentDataOnPage(globalAllIDs, showNumPage){
+            // 限制最大显示条目条件下，将所有元素增加
+            for(let i = 0; i < showNumPage; i++) {
+                var toAddElement = "<tr><td>"+globalAllIDs[i]+"</td><td>-</td><td>--</td></tr>";
+                $("#toChangeData").append(toAddElement);
+            }
+        }
+        // 将JSON响应格式的数据，显示在页面上
+        function showContentDataOnPageFromJson(toShowResponseData){
+            var showCount = toShowResponseData.length;
+            // 限制最大显示条目条件下，将所有元素增加
+            for(let i = 0; i < showCount; i++) {
+                // 提取当前请求方法
+                let requestMethod = toShowResponseData[i]["method"];
+                // 提取当前请求中的id信息
+                let requestId = toShowResponseData[i]["id"];
+                // 提取当前请求中的host部分
+                let requestHost = toShowResponseData[i]["host"];
+                // 提取当前请求中的参数，并将换行替换为逗号
+                let argsModifiedLine = toShowResponseData[i]["args"].replace(/\n/g,", "); 
+                console.log("test response modify:"+argsModifiedLine);
+                // 提取当前原始请求信息，并替换换行符为web中的换行符
+                let originalModifiedLine = toShowResponseData[i]["originalUrl"].replace(/\n/g,"<br/>"); 
+                console.log("test response modify:"+originalModifiedLine);
+
+                var toAddElement = 
+                "<tr class=\"toOnhover\">"+
+                    "<td>"+requestId+"</td>"+
+                    "<td>"+requestMethod+"</td>"+
+                    "<td class=\"Url\">"+requestHost+"</td>"+
+                    "<td class=\"Args\">"+argsModifiedLine+"</td>"+
+                "</tr>"+
+                "<tr id=\"toHide"+i+"\" class=\"toHideClass\" hidden>"+
+                    "<td colspan=4>"+originalModifiedLine+"</td>"+   // 跨越4列，作为一整行
+                "</tr>"
+                ;
+
+                $("#toChangeData").append(toAddElement);
+                
+                $(".toOnhover").hover(
+                function(){
+                    var lineNum = $(this).closest("tr").index();
+                    // console.log(lineNum);
+                    $("#toHide"+lineNum/2).show();  // 鼠标悬停在所在行时，显示隐藏行
+                },
+                function(){
+                    var lineNum = $(this).closest("tr").index();
+                    $("#toHide"+lineNum/2).hide();  // 鼠标离开所在行，隐藏行
+                });
+
+                // $(".toHideClass").hover(
+                // function(){
+                // },
+                // function(){
+                //     var lineNum = $(this).closest("tr").index();
+                //     console.log(lineNum);
+                //     $("#toHide"+lineNum/2).hide();
+                // });
+            }
+        }
+        // 查询并显示后台数据
+        function queryDataByIDsAndShowInPage(idArry){
+            // 发送id数组，返回得到每个ID的信息
+            $.ajax({
+                url:'/queryDataByIDs',
+                type:'post',
+                dataType:'json',
+                data:{
+                    ids:idArry
+                },
+                success:function(responseData){ // 处理获取的响应
+                    for(let n = 0;n<responseData.length;n++)
+                        console.log("success to achieve data by id array,data is:" + responseData[n]);
+                    showContentDataOnPageFromJson(responseData);
+                },
+                error:function(){
+                    console.log("Error occured when achieve from server.");
+                }
+            });
+        }
+        $(document).ready(function(){
+
+            $.get("/queryAllIDs",function(globalAllIDs,status){ // 页面加载完成后开始查询数据
+
+                // 反转元素内容，用于反向输出
+                globalAllIDs.reverse();
+                // 获取待显示数据ID组成的数组
+                var showNum = globalAllIDs.length > maxContentNum ? maxContentNum : globalAllIDs.length;
+                var toShowArrayIDs = new Array();
+                for(let j = 0; j<showNum; j++)
+                {
+                    toShowArrayIDs.push(globalAllIDs[j]);  // 提取元素作为待显示数据数组
+                }
+                // 测试数组
+                // toShowArrayIDs = [930,931,932];
+                // 将待显示元素数组发送到后台，查询对应的结果数组，并显示参数表、请求、响应原始信息在页面上
+                queryDataByIDsAndShowInPage(toShowArrayIDs);
+
+                // 执行定时刷新，隔10秒刷新一次，查看后台数据条目是否发生变化，有新增时进行显示，该函数会在此一直执行
+                setInterval(function(){
+                    // console.log((new Date()).toLocaleString());
+                    // $.get("/queryAllIDs",function(currentAllIDs, status){
+                        // console.log("current all ids:"+currentAllIDs);
+                        // console.log("global all ids:"+allIDs);
+                        // todo:改为查询id数量，如果数量不等于当前保存数量，则重新获取显示列表
+                    // });
+                }, 1000 * 10);  
+            });
+        });
+    </script>
+</head>
+<body>
+
+
+<div class="header">
+    <p>URL Analyze Platform</p>
+    <!-- <p id="hiddenTest" hidden>重置浏览器大小查看效果。</p> -->
+</div>
+    
+<div class="topnav">
+    <a href="#">首页</a>
+    <a href="#">攻击</a>
+    <a href="#">帮助</a>
+</div>
+    
+<div class="row">
+    <div class="column side">
+        <!-- <h2>左侧栏</h2>
+        <p>菜鸟教程 - 学的不仅是技术，更是梦想！</p> -->
+        <form action="#" method="get"> 
+        <span>复选框</span>
+            <label><input name="FuzzStyle" type="checkbox" value="" />所有参数</label> 
+            <label><input name="FuzzStyle" type="checkbox" value="" />部分参数</label> 
+        </form> 
+        <span>单选框</span>
+        <input type="radio" name="gender" value="male">是
+        <input type="radio" name="gender" value="female">否
+    </div>
+    
+    <div class="column middle">
+        <table id="showTable">
+            <!-- 首行信息 -->
+            <thead id="headerOfTabble">
+                <tr>
+                    <!-- width控制每一列的宽度 -->
+                    <th id="firstColumn">序号</th>
+                    <th id="secondColumn">方法</th>
+                    <th id="thirdColumn">URL</th>
+                    <th id="forthColumn">参数</th>
+                </tr>
+            </thead>
+            <!-- 数据部分，通过JS显示 -->
+            <tbody id="toChangeData">
+                <!-- <tr>
+                    <td>1</td>
+                    <td>Casablanca</td>
+                    <td>2019/8/12</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Casablanca</td>
+                    <td>2019/8/18</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Casablanca</td>
+                    <td>2019/8/18</td>
+                </tr> -->
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="column side">
+        <form>
+            <input type="text" id="searchContent">
+            <button>搜索</button>
+        </form>
+        <!-- <h2>右侧栏</h2> -->
+
+    </div>
+</div>
+
+<div class="footer">
+    <h2>底部区域</h2>
+</div>
+
+</body>
+</html>
